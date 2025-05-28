@@ -1,0 +1,67 @@
+.analog-clock {
+  width: 300px;
+  height: 300px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clock-face {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+  animation: clockGlow 3s ease-in-out infinite alternate;
+}
+
+.hour-hand {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.5s ease-in-out;
+}
+
+.minute-hand {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.5s ease-in-out;
+}
+
+.second-hand {
+  filter: drop-shadow(0 2px 4px rgba(255, 107, 107, 0.4));
+  animation: secondTick 1s ease-in-out infinite;
+}
+
+@keyframes clockGlow {
+  0% {
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
+  }
+  100% {
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.2));
+  }
+}
+
+@keyframes secondTick {
+  0%, 90% {
+    transform-origin: 50% 50%;
+    transform: scale(1);
+  }
+  95% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .analog-clock {
+    width: 250px;
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .analog-clock {
+    width: 200px;
+    height: 200px;
+  }
+} 
