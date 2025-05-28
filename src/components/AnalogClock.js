@@ -64,24 +64,27 @@ const AnalogClock = () => {
     }
   }
 
-  // Generate numbers
+  // Generate numbers with much better positioning
   const numbers = [];
   for (let i = 1; i <= 12; i++) {
     const angle = (i * 30) - 90;
-    const x = 50 + 28 * Math.cos(angle * Math.PI / 180);
-    const y = 50 + 28 * Math.sin(angle * Math.PI / 180);
+    // Move numbers further out and adjust positioning
+    const radius = 32;
+    const x = 50 + radius * Math.cos(angle * Math.PI / 180);
+    const y = 50 + radius * Math.sin(angle * Math.PI / 180);
     
     numbers.push(
       <text
         key={i}
         x={x}
-        y={y + 2}
+        y={y}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="rgba(255, 255, 255, 0.9)"
-        fontSize="4"
-        fontWeight="500"
+        fill="rgba(255, 255, 255, 0.95)"
+        fontSize="3"
+        fontWeight="700"
         fontFamily="Inter, sans-serif"
+        style={{ userSelect: 'none' }}
       >
         {i}
       </text>
