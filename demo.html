@@ -103,6 +103,10 @@
             font-size: 14px;
             word-break: normal;
         }
+        
+        .client-interaction-example {
+            grid-column: 1 / -1; /* Span full width */
+        }
     </style>
 </head>
 <body>
@@ -123,10 +127,10 @@
             <div class="example">
                 <h3>Small Clock</h3>
                 <div class="clock-container">
-                    <analog-clock class="small-clock" width="200px" height="200px"></analog-clock>
+                    <analog-clock id="small-clock-with-client" class="small-clock" width="200px" height="200px"></analog-clock>
                 </div>
                 <div class="code-block">
-&lt;analog-clock width="200px" height="200px"&gt;&lt;/analog-clock&gt;
+&lt;analog-clock id="small-clock-with-client" width="200px" height="200px"&gt;&lt;/analog-clock&gt;
                 </div>
             </div>
             
@@ -139,6 +143,81 @@
 &lt;analog-clock width="400px" height="400px"&gt;&lt;/analog-clock&gt;
                 </div>
             </div>
+        </div>
+        
+        <div class="example client-interaction-example">
+            <h3>Client Interaction Example</h3>
+            <p>This example demonstrates setting a mock <code>LithiumClient</code> instance on the clock component. Check the browser console for logs from the component.</p>
+            <div class="clock-container">
+                <analog-clock id="clock-with-client"></analog-clock>
+            </div>
+            <div class="code-block">
+// JavaScript to set the client
+const clockElement = document.getElementById('clock-with-client');
+
+// Mock LithiumClient that mimics the actual LithiumClient structure
+const mockLithiumClient = {
+  clientId: 'mock-client-123',
+  isReady: true, // Assuming client is ready when passed
+  registeredCallbacks: new Map(), // To store method and its callbacks
+  
+  registerCallback: function(method, callback) {
+    console.log(`MockLithiumClient: Registering callback for method '${method}'`);
+    if (!this.registeredCallbacks.has(method)) {
+      this.registeredCallbacks.set(method, []);
+    }
+    this.registeredCallbacks.get(method).push(callback);
+
+    // Simulate an event for 'customClockEvent' after a delay
+    if (method === 'customClockEvent') {
+      setTimeout(() => {
+        console.log('MockLithiumClient: Emitting customClockEvent');
+        // Call all registered callbacks for this method
+        const callbacks = this.registeredCallbacks.get(method) || [];
+        callbacks.forEach(cb => cb({ message: 'Hello from MockLithiumClient!', timestamp: new Date(), method: method }));
+      }, 3000);
+    }
+  },
+  
+  unregisterCallback: function(method, callback) {
+    console.log(`MockLithiumClient: Unregistering callback for method '${method}'`);
+    if (this.registeredCallbacks.has(method)) {
+      const callbacks = this.registeredCallbacks.get(method);
+      const index = callbacks.indexOf(callback);
+      if (index > -1) {
+        callbacks.splice(index, 1);
+      }
+      if (callbacks.length === 0) {
+        this.registeredCallbacks.delete(method);
+      }
+    }
+  },
+  
+  sendCommand: function(command) {
+    console.log('MockLithiumClient: Sent command:', command);
+  },
+  
+  // Simulate receiving a message from the server and invoking callbacks
+  _simulateIncomingMessage: function(message) {
+    console.log(`MockLithiumClient: Simulating incoming message for method '${message.method}'`, message);
+    const callbacks = this.registeredCallbacks.get(message.method) || [];
+    callbacks.forEach(cb => cb(message));
+
+    // Also call wildcard callbacks if any
+    const wildcardCallbacks = this.registeredCallbacks.get('*') || [];
+    wildcardCallbacks.forEach(cb => cb(message));
+  },
+
+  getRegisteredMethods: function() {
+    return Array.from(this.registeredCallbacks.keys());
+  }
+};
+
+// Set the client instance on the web component property
+clockElement.lc = mockLithiumClient;
+            </div>
+            <button onclick="triggerClientEvent()">Simulate Event to Small Clock</button>
+            <button onclick="triggerColorChange()">Change Header Color (Main Clock)</button>
         </div>
         
         <div class="example integration-example">
@@ -158,5 +237,121 @@
 
     <!-- Load the web component -->
     <script src="./dist/analog-clock-component.js"></script>
+    <script>
+        // Mock LithiumClient setup for the main client interaction example
+        const clockWithClient = document.getElementById('clock-with-client');
+        const mockMainClient = {
+            clientId: 'mock-main-client-789',
+            isReady: true,
+            registeredCallbacks: new Map(),
+            registerCallback: function(method, callback) {
+                console.log(`MainMockClient: Registering callback for '${method}'`);
+                if (!this.registeredCallbacks.has(method)) { this.registeredCallbacks.set(method, []); }
+                this.registeredCallbacks.get(method).push(callback);
+                if (method === 'customClockEvent') {
+                    setTimeout(() => {
+                        console.log('MainMockClient: Emitting customClockEvent for main clock');
+                        this._simulateIncomingMessage({
+                            timestamp: Date.now(),
+                            source: 'demo',
+                            method: 'customClockEvent',
+                            data: { message: 'Hello from MainMockClient for the main clock!' }
+                        });
+                    }, 2000);
+                }
+            },
+            unregisterCallback: function(method, callback) { 
+                console.log(`MainMockClient: Unregistering callback for '${method}'`); 
+                // Simplified unregister for demo
+            },
+            sendCommand: function(command) { console.log('MainMockClient: Sent command:', command); },
+            // Simulate receiving a message
+            _simulateIncomingMessage: function(message) {
+                console.log(`MainMockClient: Simulating incoming message for method '${message.method}'`, message);
+                const callbacks = this.registeredCallbacks.get(message.method) || [];
+                callbacks.forEach(cb => cb(message));
+                const wildcardCallbacks = this.registeredCallbacks.get('*') || [];
+                wildcardCallbacks.forEach(cb => cb(message));
+            }
+        };
+        if (clockWithClient) {
+            clockWithClient.lc = mockMainClient;
+        }
+
+        // Mock client for the small clock
+        let smallClockEventTargetCallback = null;
+        const smallClockClient = {
+            clientId: 'mock-small-clock-client-000',
+            isReady: true,
+            registeredCallbacks: new Map(),
+            registerCallback: function(method, callback) {
+                console.log(`SmallClockMockClient: Registering callback for '${method}'`);
+                if (!this.registeredCallbacks.has(method)) { this.registeredCallbacks.set(method, []); }
+                this.registeredCallbacks.get(method).push(callback);
+                if (method === 'customClockEvent') {
+                    smallClockEventTargetCallback = callback; 
+                }
+            },
+            unregisterCallback: function(method, callback) { 
+                console.log(`SmallClockMockClient: Unregistering callback for '${method}'`);
+                if (method === 'customClockEvent' && smallClockEventTargetCallback === callback) {
+                    smallClockEventTargetCallback = null;
+                }
+            },
+            sendCommand: function(command) { console.log('SmallClockMockClient: Sent command:', command); },
+            _simulateIncomingMessage: function(message) {
+                console.log(`SmallClockMockClient: Simulating incoming message for method '${message.method}'`, message);
+                const callbacks = this.registeredCallbacks.get(message.method) || [];
+                callbacks.forEach(cb => cb(message));
+                const wildcardCallbacks = this.registeredCallbacks.get('*') || [];
+                wildcardCallbacks.forEach(cb => cb(message));
+            }
+        };
+        
+        const smallClockElement = document.getElementById('small-clock-with-client');
+        if (smallClockElement) {
+            smallClockElement.lc = smallClockClient;
+        }
+
+        function triggerClientEvent() {
+            if (smallClockElement && smallClockElement.lc && smallClockEventTargetCallback) {
+                console.log('DemoPage: Manually triggering customClockEvent for small clock');
+                // Instead of calling callback directly, simulate the client receiving a message
+                smallClockElement.lc._simulateIncomingMessage({ 
+                    timestamp: Date.now(), 
+                    source: 'demo-button', 
+                    method: 'customClockEvent', 
+                    data: { message: 'Manually triggered event for small clock!'} 
+                });
+            } else {
+                console.log('DemoPage: No callback or client found for small clock to trigger event.');
+            }
+        }
+
+        function triggerColorChange() {
+            if (clockWithClient && clockWithClient.lc) {
+                const randomColor = {
+                    r: Math.floor(Math.random() * 256),
+                    g: Math.floor(Math.random() * 256),
+                    b: Math.floor(Math.random() * 256)
+                };
+                const message = {
+                    timestamp: Date.now(),
+                    source: "demo-button",
+                    agent: " hidrógeno ", // example from user
+                    method: "/clock/change_color",
+                    type: "request", // example from user
+                    id: 'demo-uuid-' + Math.random().toString(36).substring(7), // example from user
+                    data: {
+                        color: randomColor
+                    }
+                };
+                console.log('DemoPage: Triggering /clock/change_color with:', message);
+                clockWithClient.lc._simulateIncomingMessage(message);
+            } else {
+                console.log('DemoPage: Main clock client not found to trigger color change.');
+            }
+        }
+    </script>
 </body>
 </html> 

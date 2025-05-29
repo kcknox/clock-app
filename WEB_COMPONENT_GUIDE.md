@@ -96,6 +96,24 @@ document.head.appendChild(script);
 - `width`: Set custom width (e.g., "300px")
 - `height`: Set custom height (e.g., "300px")
 
+### Properties
+- `lc`: Set a `LithiumClient` (or any WebSocket client with a similar interface) instance on the component. The component will use this client to listen for events (e.g., `customClockEvent`) and potentially send messages.
+  ```javascript
+  const clockElement = document.querySelector('analog-clock');
+  
+  // Assuming 'myLithiumClient' is an initialized LithiumClient instance
+  // and is already connected or will connect.
+  clockElement.lc = myLithiumClient;
+  
+  // The clock component will now log this client and register a callback for 'customClockEvent'.
+  // To trigger this from your application (if you were simulating or directly invoking for testing):
+  // 1. Ensure 'myLithiumClient' has a way to manually invoke callbacks or simulate a message for a method.
+  // For example, if 'myLithiumClient' had a method like 'simulateServerMessage':
+  // myLithiumClient.simulateServerMessage('customClockEvent', { detail: 'Your data here' });
+  // Or, more realistically, the Lithium server would send a message that results in the
+  // 'customClockEvent' callback being triggered within the LithiumClient.
+  ```
+
 ### CSS Styling
 The component uses Shadow DOM, so external styles won't interfere. However, you can style the component element itself:
 

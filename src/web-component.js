@@ -6,35 +6,62 @@ class AnalogClockWebComponent extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.root = null;
+    this._reactRoot = null;
+    this._lithiumClient = null; // Internal storage for the client
   }
 
   connectedCallback() {
-    // Create a container div for React
-    const container = document.createElement('div');
-    container.style.width = '100%';
-    container.style.height = '100%';
-    container.style.display = 'flex';
-    container.style.alignItems = 'center';
-    container.style.justifyContent = 'center';
-    
-    // Add Google Fonts link to shadow DOM
-    const fontLink = document.createElement('link');
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
-    fontLink.rel = 'stylesheet';
-    
-    this.shadowRoot.appendChild(fontLink);
-    this.shadowRoot.appendChild(container);
-
-    // Create React root and render the app
-    this.root = ReactDOM.createRoot(container);
-    this.root.render(React.createElement(App));
+    this._render();
   }
 
   disconnectedCallback() {
-    if (this.root) {
-      this.root.unmount();
+    if (this._reactRoot) {
+      this._reactRoot.unmount();
+      this._reactRoot = null;
     }
+  }
+
+  // Getter and Setter for lithiumClient (lc property)
+  get lc() {
+    return this._lithiumClient;
+  }
+
+  set lc(clientInstance) {
+    console.log('Web component lc property set:', clientInstance);
+    this._lithiumClient = clientInstance;
+    this._render(); // Re-render when the client is set
+  }
+
+  _render() {
+    if (!this.shadowRoot) return;
+
+    let container = this.shadowRoot.querySelector('#react-container');
+    if (!container) {
+      // Add Google Fonts link to shadow DOM (only once)
+      if (!this.shadowRoot.querySelector('link[href*="fonts.googleapis.com"]')) {
+        const fontLink = document.createElement('link');
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+        fontLink.rel = 'stylesheet';
+        this.shadowRoot.appendChild(fontLink);
+      }
+
+      // Create a container div for React
+      container = document.createElement('div');
+      container.id = 'react-container';
+      container.style.width = '100%';
+      container.style.height = '100%';
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
+      container.style.justifyContent = 'center';
+      this.shadowRoot.appendChild(container);
+    }
+
+    if (!this._reactRoot) {
+      this._reactRoot = ReactDOM.createRoot(container);
+    }
+    
+    // Pass the lithiumClient to the App component
+    this._reactRoot.render(React.createElement(App, { lithiumClient: this._lithiumClient }));
   }
 
   // Allow setting custom width and height
@@ -50,7 +77,9 @@ class AnalogClockWebComponent extends HTMLElement {
 }
 
 // Define the custom element
-customElements.define('analog-clock', AnalogClockWebComponent);
+if (!customElements.get('analog-clock')) {
+  customElements.define('analog-clock', AnalogClockWebComponent);
+}
 
 // Export for module usage
 export default AnalogClockWebComponent; 

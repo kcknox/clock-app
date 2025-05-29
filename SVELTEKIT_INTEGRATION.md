@@ -440,6 +440,73 @@ Here's a complete SvelteKit page using the clock:
         cursor: pointer;
     }
 </style>
+
+### 2. Using LithiumClient Property
+
+If you need to pass a `LithiumClient` (or a similar WebSocket client) instance to the clock component, you can set it as a property directly on the element after it's mounted.
+
+```svelte
+<!-- src/routes/+page.svelte -->
+<script>
+    import { onMount, afterUpdate } from 'svelte';
+    import { browser } from '$app/environment';
+
+    // Assume 'lc' is your initialized LithiumClient instance, 
+    // perhaps from a Svelte store or context.
+    // For this example, we'll create a mock one.
+    let lc = null; 
+    let clockElement = null;
+    let mounted = false;
+
+    onMount(async () => {
+        if (browser) {
+            if (!customElements.get('analog-clock')) {
+                await import('/analog-clock-component.js');
+            }
+            // Mock LithiumClient for demonstration
+            lc = {
+                clientId: 'svelte-mock-client-456',
+                isConnected: true,
+                on: (eventName, callback) => {
+                    console.log(`SvelteMockClient: Subscribed to '${eventName}'`);
+                    if (eventName === 'customClockEvent') {
+                        setTimeout(() => {
+                            console.log('SvelteMockClient: Emitting customClockEvent by calling callback directly');
+                            callback({ detail: 'Data from SvelteKit host!', method: eventName });
+                        }, 4000);
+                    }
+                },
+                off: (eventName, callback) => { console.log(`SvelteMockClient: Unsubscribed from '${eventName}'`); },
+                send: (data) => { console.log('SvelteMockClient: Sent data:', data); }
+            };
+            mounted = true;
+        }
+    });
+
+    // Use afterUpdate to ensure clockElement is available and lc is set
+    afterUpdate(() => {
+        if (browser && mounted && clockElement && lc && !clockElement.lc) {
+            console.log('SvelteKit: Setting lc property on analog-clock', lc);
+            clockElement.lc = lc;
+        }
+    });
+</script>
+
+{#if browser && mounted}
+    <analog-clock bind:this={clockElement} width="300px" height="300px">
+        <!-- You can project content here if the web component supports slots -->
+    </analog-clock>
+    {#if clockElement && clockElement.lc}
+        <p>LithiumClient has been set on the clock!</p>
+    {/if}
+{:else}
+    <div class="clock-placeholder">
+        🕐 Clock loading...
+    </div>
+{/if}
 ```
 
-The web component works great in SvelteKit! The main considerations are handling SSR properly and ensuring the component loads client-side only. 
+This approach ensures that you wait for the client-side environment and for the `analog-clock` element to be rendered in the DOM before attempting to set the `lc` property. The `bind:this={clockElement}` directive gives you a direct reference to the DOM element.
+
+### 3. TypeScript Support
+<!-- ... existing code ... -->
